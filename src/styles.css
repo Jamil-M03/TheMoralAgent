@@ -1,0 +1,351 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-kantian: var(--kantian);
+  --color-utilitarian: var(--utilitarian);
+  --color-ring: var(--ring);
+  --font-serif: "Fraunces", "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+}
+
+:root {
+  --background: #FAF7F2;
+  --foreground: #1A1814;
+  --muted: #efece4;
+  --muted-foreground: #6b6358;
+  --border: #e3ddd0;
+  --accent: #2b2620;
+  --popover: #ffffff;
+  --popover-foreground: #1A1814;
+  --kantian: #2B3A67;
+  --utilitarian: #B8754A;
+  --ring: #8a7fa8;
+  --grad-from: #FAF7F2;
+  --grad-to: #f1ebe0;
+}
+
+.dark {
+  --background: #15141A;
+  --foreground: #F0EBE3;
+  --muted: #1f1e26;
+  --muted-foreground: #9a9285;
+  --border: #2a2832;
+  --accent: #f0ebe3;
+  --popover: #1c1b22;
+  --popover-foreground: #F0EBE3;
+  --kantian: #8AA4D6;
+  --utilitarian: #E0A878;
+  --ring: #a99dc8;
+  --grad-from: #15141A;
+  --grad-to: #1b1925;
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: 17px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-image:
+      radial-gradient(ellipse at top, var(--grad-to), var(--grad-from) 60%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.035 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    background-attachment: fixed;
+    min-height: 100vh;
+    transition: background-color 300ms ease, color 300ms ease;
+  }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes soft-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+.animate-fade-up { animation: fade-up 0.7s ease-out both; }
+.animate-soft-pulse { animation: soft-pulse 1.6s ease-in-out infinite; }
+
+/* ===== Canonical dilemma pills ===== */
+.pill {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--color-foreground);
+  background-color: transparent;
+  border: 1px solid color-mix(in oklab, var(--color-foreground) 25%, transparent);
+  border-radius: 9999px;
+  padding: 10px 18px;
+  position: relative;
+  cursor: pointer;
+  min-height: 44px; /* touch target */
+  display: inline-flex;
+  align-items: center;
+  transition:
+    border-color 200ms ease-out,
+    background-color 200ms ease-out,
+    transform 200ms ease-out,
+    box-shadow 200ms ease-out;
+  animation: pill-breathe 4s ease-in-out infinite;
+}
+
+@media (hover: hover) {
+  .pill:hover {
+    border-color: color-mix(in oklab, var(--color-foreground) 60%, transparent);
+    background-color: color-mix(in oklab, var(--color-foreground) 6%, transparent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    animation: none;
+  }
+}
+.dark .pill:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.pill:focus-visible {
+  outline: none;
+  border-color: color-mix(in oklab, var(--color-foreground) 60%, transparent);
+  background-color: color-mix(in oklab, var(--color-foreground) 6%, transparent);
+  box-shadow:
+    0 0 0 2px var(--color-background),
+    0 0 0 4px var(--color-ring);
+  animation: none;
+}
+
+.pill:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 80ms ease-in,
+    box-shadow 80ms ease-in,
+    border-color 80ms ease-in,
+    background-color 80ms ease-in;
+  animation: none;
+}
+
+@keyframes pill-breathe {
+  0%, 100% { border-color: color-mix(in oklab, var(--color-foreground) 22%, transparent); }
+  50%      { border-color: color-mix(in oklab, var(--color-foreground) 28%, transparent); }
+}
+
+@keyframes pill-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-pill-in {
+  opacity: 0;
+  animation: pill-in 350ms ease-out forwards, pill-breathe 4s ease-in-out 1.5s infinite;
+}
+
+@keyframes pill-flash {
+  0%   { border-color: color-mix(in oklab, var(--color-foreground) 25%, transparent); box-shadow: none; }
+  30%  { border-color: var(--color-ring); box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-ring) 25%, transparent); }
+  100% { border-color: color-mix(in oklab, var(--color-foreground) 25%, transparent); box-shadow: none; }
+}
+.pill-flash {
+  animation: pill-flash 400ms ease-out;
+}
+
+/* Textarea highlight pulse when a pill fills it */
+@keyframes textarea-flash {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-ring) 0%, transparent); }
+  40%  { box-shadow: 0 0 0 6px color-mix(in oklab, var(--color-ring) 25%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-ring) 0%, transparent); }
+}
+.textarea-flash {
+  animation: textarea-flash 500ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill,
+  .animate-pill-in {
+    animation: none !important;
+    opacity: 1;
+    transition:
+      border-color 100ms linear,
+      background-color 100ms linear !important;
+  }
+  .pill:hover,
+  .pill:active,
+  .pill:focus-visible {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  .pill-flash,
+  .textarea-flash {
+    animation: none !important;
+  }
+}
+
+/* ===== Reason button ===== */
+.reason-btn {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  cursor: pointer;
+  border: none;
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition:
+    transform 250ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    box-shadow 250ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    opacity 300ms ease-out;
+}
+
+.reason-btn .reason-glow {
+  position: absolute;
+  inset: 2px;
+  border-radius: 9999px;
+  pointer-events: none;
+  box-shadow: inset 0 0 18px 2px var(--color-ring);
+  opacity: 0;
+  z-index: 0;
+  animation: reason-breathe 3s ease-in-out infinite;
+  transition: opacity 250ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.reason-btn .reason-label {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+}
+
+@keyframes reason-breathe {
+  0%, 100% { opacity: 0; }
+  50%      { opacity: 0.15; }
+}
+
+@media (hover: hover) {
+  .reason-btn:not(.is-disabled):not(.is-loading):hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  }
+  .reason-btn:not(.is-disabled):not(.is-loading):hover .reason-glow {
+    opacity: 0.25;
+    animation: none;
+  }
+}
+.dark .reason-btn:not(.is-disabled):not(.is-loading):hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+}
+
+.reason-btn:not(.is-disabled):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--color-background),
+    0 0 0 5px var(--color-ring);
+}
+
+.reason-btn:not(.is-disabled):not(.is-loading):active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition:
+    transform 100ms ease-in,
+    box-shadow 100ms ease-in;
+}
+.reason-btn:not(.is-disabled):not(.is-loading):active .reason-glow {
+  opacity: 0.4;
+  animation: none;
+  transition: opacity 100ms ease-in;
+}
+
+.reason-btn.is-disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.reason-btn.is-disabled .reason-glow {
+  animation: none;
+  opacity: 0;
+}
+
+.reason-btn.is-loading {
+  pointer-events: none;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+.dark .reason-btn.is-loading {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+}
+.reason-btn.is-loading .reason-glow {
+  animation: reason-breathe-fast 1.5s ease-in-out infinite;
+}
+@keyframes reason-breathe-fast {
+  0%, 100% { opacity: 0.10; }
+  50%      { opacity: 0.35; }
+}
+
+/* Click ripple */
+.reason-ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: radial-gradient(circle, color-mix(in oklab, var(--color-ring) 30%, transparent) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  animation: reason-ripple 500ms ease-out forwards;
+}
+@keyframes reason-ripple {
+  0%   { transform: scale(1);   opacity: 0.3; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
+/* Loading dots */
+.reason-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 1em;
+}
+.reason-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.3;
+  animation: reason-dot 1200ms ease-in-out infinite;
+}
+.reason-dots span:nth-child(2) { animation-delay: 200ms; }
+.reason-dots span:nth-child(3) { animation-delay: 400ms; }
+@keyframes reason-dot {
+  0%, 60%, 100% { opacity: 0.3; }
+  30%           { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reason-btn,
+  .reason-btn .reason-glow {
+    transition: opacity 120ms linear, box-shadow 120ms linear !important;
+    animation: none !important;
+  }
+  .reason-btn:not(.is-disabled):not(.is-loading):hover,
+  .reason-btn.is-loading {
+    transform: none !important;
+  }
+  .reason-btn:not(.is-disabled):not(.is-loading):active {
+    transform: none !important;
+  }
+  .reason-ripple { display: none !important; }
+  .reason-dots span { animation-duration: 1200ms; }
+}
