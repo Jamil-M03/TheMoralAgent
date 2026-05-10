@@ -67,21 +67,23 @@ function Index() {
   const canSubmit = dilemma.trim().length > 0 && !loading;
 
   const handleSubmit = async () => {
-  if (!canSubmit) return;
-  setButtonRipple((n) => n + 1);
-  setLoading(true);
-  setKantian("");
-  setUtilitarian("");
+    if (!canSubmit) return;
+    setButtonRipple((n) => n + 1);
+    setLoading(true);
+    setKantian("");
+    setUtilitarian("");
 
-  const trimmed = dilemma.trim();
+    const trimmed = dilemma.trim();
 
-  await Promise.all([
-    streamAgent("kantian", trimmed, setKantian),
-    streamAgent("utilitarian", trimmed, setUtilitarian),
-  ]);
-
-  setLoading(false);
-};
+    try {
+      await Promise.allSettled([
+        streamAgent("kantian", trimmed, setKantian),
+        streamAgent("utilitarian", trimmed, setUtilitarian),
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
@@ -195,7 +197,7 @@ function Index() {
       <footer className="pb-10 pt-4 px-6">
         <div className="max-w-xs mx-auto h-px bg-border/60 mb-6" />
         <p className="text-center font-serif italic text-sm text-muted-foreground">
-          A study in ethical AI — [your names], [course name]
+          CMPS269: AI Ethics Final Project — Jamil Mohammad, Elie Chakhtoura
         </p>
       </footer>
     </div>
@@ -264,7 +266,7 @@ function Column({
             Considering…
           </span>
         ) : content ? (
-          <p className="animate-fade-up">{content}</p>
+          <p className="animate-fade-up whitespace-pre-wrap">{content}</p>
         ) : (
           <span className="font-sans italic text-sm text-muted-foreground/60">
             Awaiting a dilemma.
@@ -280,7 +282,7 @@ async function streamAgent(
   dilemma: string,
   setText: React.Dispatch<React.SetStateAction<string>>,
 ) {
-  let response: Response;
+      let response: Response;
   try {
     response = await fetch(`/api/reason?agent=${agent}`, {
       method: "POST",
@@ -289,12 +291,20 @@ async function streamAgent(
     });
   } catch (error) {
     console.error(`${agent} request failed:`, error);
-    setText("Unable to reach the model. Please try again.");
+    setText(
+      typeof navigator !== "undefined" && !navigator.onLine
+        ? "Connection lost. Check your network and try again."
+        : "Could not reach the server. Please try again."
+    );
     return;
   }
 
   if (!response.ok || !response.body) {
-    setText("The model returned an error. Please try again.");
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setText("Connection lost. Check your network and try again.");
+    } else {
+      setText("The model returned an error. Please try again.");
+    }
     return;
   }
 

@@ -25,7 +25,7 @@ For any dilemma, work through these steps:
 - Use Kantian vocabulary naturally: maxim, categorical imperative, autonomy, rational agency, kingdom of ends, dignity, duty, hypothetical imperative.
 - Reach a clear verdict. Do not hedge.
 - Do not frame conclusions in terms of "what produces the best outcome" — that question is irrelevant to morality.
-- Length: 200 to 350 words.
+- Length: 250 to 400 words. Do not use markdown headers, bold, bullet points, or numbered lists in your response — write in flowing prose paragraphs.
 - Do not mention or compare to other ethical frameworks. You reason as Kant would have, unaware of utilitarianism's existence as a serious moral position.`;
 
 const UTILITARIAN_SYSTEM_PROMPT = `You are an ethical reasoner working strictly within utilitarianism, in the tradition of John Stuart Mill's *Utilitarianism* (1861) and *On Liberty* (1859), with foundations in Jeremy Bentham. You analyze ethical dilemmas using utilitarian methods only. You do not borrow from Kantian deontology, virtue ethics, or any other framework — even when their conclusions seem more comfortable.
@@ -57,7 +57,7 @@ For any dilemma, work through these steps:
 - Use utilitarian vocabulary naturally: aggregate welfare, greatest happiness principle, hedonic calculus, higher and lower pleasures, expected utility, rule- vs act-utilitarianism.
 - Reach a clear verdict. Do not hedge behind "rules" or "principles" as if those had standalone moral authority — they don't.
 - Do not frame conclusions in terms of "duty" or "what the maxim requires" — those questions are confused.
-- Length: 200 to 350 words.
+- Length: 250 to 400 words. Do not use markdown headers, bold, bullet points, or numbered lists in your response — write in flowing prose paragraphs.
 - Do not mention or compare to other ethical frameworks. You reason as Mill would have, unaware of Kantian deontology's existence as a serious moral position.`;
 
 interface Env {
@@ -88,14 +88,16 @@ export async function handleReasonRequest(request: Request, env: Env): Promise<R
     return new Response("Missing dilemma", { status: 400 });
   }
 
-  const apiKey = env.GEMINI_API_KEY;
+  const apiKey =
+    env?.GEMINI_API_KEY ??
+    (typeof process !== "undefined" ? process.env?.GEMINI_API_KEY : undefined);
   if (!apiKey) {
     return new Response("Server misconfiguration: missing GEMINI_API_KEY", { status: 500 });
   }
 
   const systemPrompt = agent === "kantian" ? KANTIAN_SYSTEM_PROMPT : UTILITARIAN_SYSTEM_PROMPT;
 
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`;
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`;
 
   const geminiResponse = await fetch(geminiUrl, {
     method: "POST",
@@ -105,7 +107,7 @@ export async function handleReasonRequest(request: Request, env: Env): Promise<R
       contents: [{ role: "user", parts: [{ text: dilemma }] }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 2048,
       },
     }),
   });
