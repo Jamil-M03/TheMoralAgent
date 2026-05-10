@@ -7,12 +7,6 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const KANTIAN_PLACEHOLDER =
-  "The categorical imperative requires us to ask: could the maxim of this action be universalized without contradiction? To act morally is to act from duty, treating every rational being as an end in themselves and never merely as a means. Consequences, however favorable, cannot redeem an act whose principle could not be willed as universal law.";
-
-const UTILITARIAN_PLACEHOLDER =
-  "The action that produces the greatest aggregate well-being is the morally correct one. We must weigh the consequences for all affected parties — counting each as one and none as more than one — and choose the path that maximizes happiness and minimizes suffering across the whole. Intentions matter little; outcomes are everything.";
-
 function useTheme() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   useEffect(() => {
@@ -72,18 +66,22 @@ function Index() {
 
   const canSubmit = dilemma.trim().length > 0 && !loading;
 
-  const handleSubmit = () => {
-    if (!canSubmit) return;
-    setButtonRipple((n) => n + 1);
-    setLoading(true);
-    setKantian("");
-    setUtilitarian("");
-    setTimeout(() => {
-      setKantian(KANTIAN_PLACEHOLDER);
-      setUtilitarian(UTILITARIAN_PLACEHOLDER);
-      setLoading(false);
-    }, 1000);
-  };
+  const handleSubmit = async () => {
+  if (!canSubmit) return;
+  setButtonRipple((n) => n + 1);
+  setLoading(true);
+  setKantian("");
+  setUtilitarian("");
+
+  const trimmed = dilemma.trim();
+
+  await Promise.all([
+    streamAgent("kantian", trimmed, setKantian),
+    streamAgent("utilitarian", trimmed, setUtilitarian),
+  ]);
+
+  setLoading(false);
+};
 
   const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
@@ -275,4 +273,69 @@ function Column({
       </div>
     </div>
   );
+}
+
+async function streamAgent(
+  agent: "kantian" | "utilitarian",
+  dilemma: string,
+  setText: React.Dispatch<React.SetStateAction<string>>,
+) {
+  let response: Response;
+  try {
+    response = await fetch(`/api/reason?agent=${agent}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dilemma }),
+    });
+  } catch (error) {
+    console.error(`${agent} request failed:`, error);
+    setText("Unable to reach the model. Please try again.");
+    return;
+  }
+
+  if (!response.ok || !response.body) {
+    setText("The model returned an error. Please try again.");
+    return;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split("\n\n");
+      buffer = events.pop() ?? "";
+
+      for (const event of events) {
+        let dataLine = "";
+        let eventType = "message";
+        for (const line of event.split("\n")) {
+          if (line.startsWith("data: ")) dataLine = line.slice(6);
+          else if (line.startsWith("event: ")) eventType = line.slice(7);
+        }
+
+        if (eventType === "done") return;
+        if (eventType === "error") {
+          setText((prev) => prev + "\n\n[Error: stream interrupted]");
+          return;
+        }
+
+        if (dataLine) {
+          try {
+            const chunk = JSON.parse(dataLine) as string;
+            setText((prev) => prev + chunk);
+          } catch {
+            // ignore malformed line
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
 }
