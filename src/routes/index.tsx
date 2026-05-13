@@ -30,6 +30,50 @@ const CANONICAL_DILEMMAS = [
   { label: "Stealing the Medicine", text: "A pharmacist refuses to lower the price of a drug that could save your dying spouse. You cannot afford it. Would it be morally permissible to steal the medicine?" },
 ];
 
+/**
+ * Render text with **bold** markdown converted to <strong> elements.
+ * Handles streaming: a trailing unmatched `**` is rendered as plain text
+ * so the text doesn't visibly jump when the closing `**` arrives.
+ */
+function renderBoldedText(text: string, accentVar?: string): React.ReactNode {
+  if (!text) return null;
+
+  // During streaming, suppress an unclosed final ** so partial asterisks
+  // don't flicker on screen before the closing pair arrives.
+  let working = text;
+  const openCount = (working.match(/\*\*/g) ?? []).length;
+  if (openCount % 2 === 1) {
+    const lastOpen = working.lastIndexOf("**");
+    working = working.slice(0, lastOpen);
+  }
+
+  const parts: React.ReactNode[] = [];
+  const regex = /\*\*([^*]+?)\*\*/g;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+
+  const boldStyle: React.CSSProperties = accentVar
+    ? { color: `var(${accentVar})`, fontWeight: 600 }
+    : { fontWeight: 600 };
+
+  while ((match = regex.exec(working)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(working.slice(lastIndex, match.index));
+    }
+    parts.push(
+      <strong key={key++} style={boldStyle}>
+        {match[1]}
+      </strong>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < working.length) {
+    parts.push(working.slice(lastIndex));
+  }
+  return parts;
+}
+
 function Index() {
   const { theme, toggle } = useTheme();
   const [dilemma, setDilemma] = useState("");
@@ -266,7 +310,7 @@ function Column({
             Considering…
           </span>
         ) : content ? (
-          <p className="animate-fade-up whitespace-pre-wrap">{content}</p>
+          <p className="animate-fade-up whitespace-pre-wrap">{renderBoldedText(content, accentVar)}</p>
         ) : (
           <span className="font-sans italic text-sm text-muted-foreground/60">
             Awaiting a dilemma.
@@ -282,7 +326,7 @@ async function streamAgent(
   dilemma: string,
   setText: React.Dispatch<React.SetStateAction<string>>,
 ) {
-      let response: Response;
+  let response: Response;
   try {
     response = await fetch(`/api/reason?agent=${agent}`, {
       method: "POST",
@@ -291,20 +335,12 @@ async function streamAgent(
     });
   } catch (error) {
     console.error(`${agent} request failed:`, error);
-    setText(
-      typeof navigator !== "undefined" && !navigator.onLine
-        ? "Connection lost. Check your network and try again."
-        : "Could not reach the server. Please try again."
-    );
+    setText("Something went wrong. Please check your connection and try again.");
     return;
   }
 
   if (!response.ok || !response.body) {
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      setText("Connection lost. Check your network and try again.");
-    } else {
-      setText("The model returned an error. Please try again.");
-    }
+    setText("Something went wrong. Please check your connection and try again.");
     return;
   }
 
